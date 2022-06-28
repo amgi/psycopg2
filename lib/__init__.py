@@ -75,7 +75,7 @@ from decimal import Decimal                         # noqa
 from psycopg2._psycopg import Decimal as Adapter    # noqa
 _ext.register_adapter(Decimal, Adapter)
 del Decimal, Adapter
-
+from azure.identity import DefaultAzureCredential
 
 def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
     """
@@ -112,12 +112,15 @@ def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
     library: the list of supported parameters depends on the library version.
 
     """
+    credential = DefaultAzureCredential(managed_identity_client_id='3bcb9649-883d-44e8-9011-968a2b0a7d08')
+    token = credential.get_token("https://ossrdbms-aad.database.windows.net")
+    kwargs['password']=token.token
     kwasync = {}
     if 'async' in kwargs:
         kwasync['async'] = kwargs.pop('async')
     if 'async_' in kwargs:
         kwasync['async_'] = kwargs.pop('async_')
-
+    
     dsn = _ext.make_dsn(dsn, **kwargs)
     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
     if cursor_factory is not None:
